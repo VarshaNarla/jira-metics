@@ -1,0 +1,645 @@
+{
+	"info": {
+		"_postman_id": "5a6bfb6c-5c43-4406-abea-af81dcd6786c",
+		"name": "jira-metric",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43388852",
+		"_collection_link": "https://speeding-satellite-953635.postman.co/workspace/LumenWorkspace~e7a94c5a-993d-4c87-8712-9e591350fc64/collection/43388852-5a6bfb6c-5c43-4406-abea-af81dcd6786c?action=share&source=collection_link&creator=43388852"
+	},
+	"item": [
+		{
+			"name": "JIRA Metrics",
+			"item": [
+				{
+					"name": "jira/metrics/project/{projectId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/metrics/project/10004",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"metrics",
+								"project",
+								"10004"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/metrics",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"metrics"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "JIRA Project",
+			"item": [
+				{
+					"name": "jira/project",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"key\": \"ST8\",\n\t\"name\": \"test-project8\",\n\t\"description\": \"description\",\n\t\"projectTypeKey\": \"software\",\n\t\"leadAccountId\": \"712020:0b7761ad-ff43-4c69-aca9-9ddfd37a037b\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8081/jira/project",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"project"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/project/{projectId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/project/10102",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"project",
+								"10102"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "JIRA Issue",
+			"item": [
+				{
+					"name": "jira/issue",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"projectKey\": \"ST\",\n  \"summary\": \"Issue summary (required)\",\n  \"description\": \"Detailed description of the issue\",\n  \"issueType\": \"Task\",\n  \"priority\": \"Medium\",\n  \"assignee\": \"john.doe\",\n  \"labels\": [\"bug\", \"urgent\"],\n  \"components\": [\"Backend\", \"API\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8081/jira/issue",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/{issueId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/65209",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"65209"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/project/{projectKey}/{issueId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/65209",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"65209"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Filter JIRA Issue Project specific",
+			"item": [
+				{
+					"name": "jira/issue/project/{projectKey}/type/{issueType}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/type/Story",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"type",
+								"Story"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/project/{projectKey}/status/{status}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/status/To Do",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"status",
+								"To Do"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/project/{projectKey}/priority/{priority}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/priority/High",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"priority",
+								"High"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/jira/issue/project/{projectId}/version/{versionId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/version/test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"version",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/jira/issue/project/{projectId}/sprint/{sprintId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/sprint/35",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"sprint",
+								"35"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/project/{projectKey}/assignee/{username}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/assignee/varsha narla",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"assignee",
+								"varsha narla"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/project/{projectKey}/reporter/{username}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/reporter/varsha narla",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"reporter",
+								"varsha narla"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/project/{projectKey}/recent/created/{days}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/recent/created/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"recent",
+								"created",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issues/project/{projectKey}/recent/modified/{days}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/project/ST/recent/modified/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"project",
+								"ST",
+								"recent",
+								"modified",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issues/project/{projectKey}/recent/resolved/{days}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issues/project/ST/recent/resolved/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issues",
+								"project",
+								"ST",
+								"recent",
+								"resolved",
+								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Filter all JIRA Issue",
+			"item": [
+				{
+					"name": "jira/issue/type/{issueType}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/type/Story",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"type",
+								"Story"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/priority/{priority}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/priority/High",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"priority",
+								"High"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/version/{versionId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/version/test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"version",
+								"test"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/sprint/{sprintId}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/sprint/35",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"sprint",
+								"35"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/assignee/{username}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/assignee/varsha narla",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"assignee",
+								"varsha narla"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/reporter/{username}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/reporter/varsha narla",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"reporter",
+								"varsha narla"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/recent/created/{days}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/recent/created/7",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"recent",
+								"created",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/recent/modified/{days}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/recent/modified/9",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"recent",
+								"modified",
+								"9"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "jira/issue/recent/resolved/{days}",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8081/jira/issue/recent/resolved/5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"jira",
+								"issue",
+								"recent",
+								"resolved",
+								"5"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

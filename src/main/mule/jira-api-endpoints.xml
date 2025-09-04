@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+		http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+	<!-- ========================================== -->
+	<!-- JIRA METRICS ENDPOINTS -->
+	<!-- ========================================== -->
+
+	<!-- GET /jira/metrics - Get All JIRA Metrics -->
+	<flow name="getJiraMetricsFlow" doc:name="Get Jira Metrics Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/metrics" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Starting Jira metrics collection..." />
+		<flow-ref doc:name="Process Jira Metrics" name="processJiraMetricsSubflow"/>
+		<flow-ref doc:name="Transform Metrics Response" name="transformMetricsResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Jira metrics collection completed successfully" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Metrics Error" name="handleMetricsErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/metrics/project/{projectId} - Get JIRA Metrics by Project -->
+	<flow name="getJiraMetricsByProjectFlow" doc:name="Get Jira Metrics By Project Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/metrics/project/{projectId}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Starting Jira metrics collection for project ID: #[attributes.uriParams.projectId]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<flow-ref doc:name="Process Project Metrics" name="processProjectMetricsSubflow"/>
+		<flow-ref doc:name="Transform Project Metrics Response" name="transformProjectMetricsResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Jira metrics collection completed successfully for project ID: #[vars.projectId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Project Metrics Error" name="handleProjectMetricsErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- ========================================== -->
+	<!-- JIRA PROJECT ENDPOINTS -->
+	<!-- ========================================== -->
+
+	<!-- POST /jira/project - Create JIRA Project -->
+	<flow name="createJiraProjectFlow" doc:name="Create JIRA Project Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/project" allowedMethods="POST" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Starting JIRA project creation..." />
+		<flow-ref doc:name="Create Project" name="createProjectSubflow"/>
+		<flow-ref doc:name="Transform Create Project Response" name="transformCreateProjectResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="JIRA project created successfully with ID: #[payload.projectId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Create Project Error" name="handleCreateProjectErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/project/{projectId} - Get JIRA Project -->
+	<flow name="getJiraProjectFlow" doc:name="Get JIRA Project Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/project/{projectId}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA project with ID: #[attributes.uriParams.projectId]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<flow-ref doc:name="Get Project By ID" name="getProjectByIdSubflow"/>
+		<flow-ref doc:name="Transform Project Response" name="transformProjectResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="JIRA project retrieved successfully with ID: #[payload.project.projectId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Project Error" name="handleGetProjectErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- ========================================== -->
+	<!-- JIRA ISSUE ENDPOINTS -->
+	<!-- ========================================== -->
+
+	<!-- POST /jira/issue - Create JIRA Issue -->
+	<flow name="createJiraIssueFlow" doc:name="Create JIRA Issue Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue" allowedMethods="POST" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Starting JIRA issue creation..." />
+		<flow-ref doc:name="Validate Issue Input" name="validateIssueInputSubflow"/>
+		<flow-ref doc:name="Create Issue" name="createIssueSubflow"/>
+		<flow-ref doc:name="Transform Create Issue Response" name="transformCreateIssueResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="JIRA issue created successfully with ID: #[payload.issueId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Create Issue Error" name="handleCreateIssueErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/{issueId} - Get JIRA Issue -->
+	<flow name="getJiraIssueFlow" doc:name="Get JIRA Issue Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/{issueId}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issue with ID: #[attributes.uriParams.issueId]..." />
+		<set-variable value="#[attributes.uriParams.issueId]" doc:name="Set Issue ID" variableName="issueId"/>
+		<flow-ref doc:name="Get Issue By ID" name="getIssueByIdSubflow"/>
+		<flow-ref doc:name="Transform Issue Response" name="transformIssueResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="JIRA issue retrieved successfully with ID: #[payload.issue.id]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issue Error" name="handleGetIssueErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/project/{projectId}/{issueId} - Get JIRA Issue by Project and Issue ID -->
+	<flow name="getJiraIssueByProjectFlow" doc:name="Get JIRA Issue By Project Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/{issueId}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issue with ID: #[attributes.uriParams.issueId] for project: #[attributes.uriParams.projectId]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.issueId]" doc:name="Set Issue ID" variableName="issueId"/>
+		<flow-ref doc:name="Get Issue By ID" name="getIssueByIdSubflow"/>
+		<flow-ref doc:name="Validate Issue Project" name="validateIssueProjectSubflow"/>
+		<flow-ref doc:name="Transform Issue Response" name="transformIssueResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="JIRA issue retrieved successfully with ID: #[payload.issue.id] for project: #[vars.projectId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issue Error" name="handleGetIssueErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- ========================================== -->
+	<!-- JIRA ISSUE QUERY ENDPOINTS -->
+	<!-- ========================================== -->
+
+	<!-- GET /jira/issue/project/{projectId}/type/{issueType} - Get Issues by Project and Type -->
+	<flow name="getIssuesByProjectAndTypeFlow" doc:name="Get Issues By Project And Type Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/type/{issueType}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] with type: #[attributes.uriParams.issueType]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.issueType]" doc:name="Set Issue Type" variableName="issueType"/>
+		<flow-ref doc:name="Get Issues By Type" name="getIssuesByTypeSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] with type: #[vars.issueType]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/project/{projectId}/status/{status} - Get Issues by Project and Status -->
+	<flow name="getIssuesByProjectAndStatusFlow" doc:name="Get Issues By Project And Status Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/status/{status}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] with status: #[attributes.uriParams.status]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.status]" doc:name="Set Status" variableName="status"/>
+		<flow-ref doc:name="Get Issues By Project And Status" name="getIssuesByProjectAndStatusSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] with status: #[vars.status]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+	<!-- GET /jira/issue/project/{projectId}/priority/{priority} - Get Issues by Project and Priority -->
+	<flow name="getIssuesByProjectAndPriorityFlow" doc:name="Get Issues By Project And Priority Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/priority/{priority}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] with priority: #[attributes.uriParams.priority]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.priority]" doc:name="Set Priority" variableName="priority"/>
+		<flow-ref doc:name="Get Issues By Project And Priority" name="getIssuesByProjectAndPrioritySubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] with priority: #[vars.priority]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/project/{projectId}/assignee/{username} - Get Issues by Project and Assignee -->
+	<flow name="getIssuesByProjectAndAssigneeFlow" doc:name="Get Issues By Project And Assignee Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/assignee/{username}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] assigned to: #[attributes.uriParams.username]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.username]" doc:name="Set Assignee" variableName="assignee"/>
+		<flow-ref doc:name="Get Issues Assigned To User" name="getIssuesAssignedToUserSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] assigned to: #[vars.assignee]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+	<!-- GET /jira/issue/project/{projectId}/reporter/{username} - Get Issues by Project and Reporter -->
+	<flow name="getIssuesByProjectAndReporterFlow" doc:name="Get Issues By Project And Reporter Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/reporter/{username}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] reported by: #[attributes.uriParams.username]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.username]" doc:name="Set Reporter" variableName="reporter"/>
+		<flow-ref doc:name="Get Issues By Project And Reporter" name="getIssuesByProjectAndReporterSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] reported by: #[vars.reporter]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/project/{projectId}/recent/created/{days} - Get Recently Created Issues by Project -->
+	<flow name="getRecentlyCreatedIssuesByProjectFlow" doc:name="Get Recently Created Issues By Project Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/recent/created/{days}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] created in the last #[attributes.uriParams.days default 10] days..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.days default 10]" doc:name="Set Days Ago" variableName="daysAgo"/>
+		<flow-ref doc:name="Get Recently Created Issues" name="getRecentlyCreatedIssuesSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] created in the last #[vars.daysAgo] days" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/project/{projectId}/recent/modified/{days} - Get Recently Modified Issues by Project -->
+	<flow name="getRecentlyModifiedIssuesByProjectFlow" doc:name="Get Recently Modified Issues By Project Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/recent/modified/{days}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] modified in the last #[attributes.uriParams.days default 10] days..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.days default 10]" doc:name="Set Days Ago" variableName="daysAgo"/>
+		<flow-ref doc:name="Get Recently Modified Issues" name="getRecentlyModifiedIssuesSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] modified in the last #[vars.daysAgo] days" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+	<!-- GET /jira/issues/project/{projectKey}/recent/resolved/{days} - Get Resolved Issues by Project -->
+	<flow name="getRecentlyResolvedIssuesByProjectFlow" doc:name="Get Resolved Issues By Project Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issues/project/{projectKey}/recent/resolved/{days}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] resolved in the last #[attributes.uriParams.days default 10] days..." />
+		<set-variable value="#[attributes.uriParams.projectKey]" doc:name="Set Project ID" variableName="projectId"/>
+		
+		<!-- Set default values for date range parameters -->
+		<set-variable value="#[attributes.uriParams.days default '30']" doc:name="Set From Days" variableName="daysAgo"/>
+		
+		<flow-ref doc:name="Get Recently resolved Issues" name="getRecentlyResolvedIssuesSubflow" doc:id="7ecf6c28-c270-4c3f-89e5-1eab16c68922"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.total default 0] issues resolved in the last #[vars.daysAgo default 10] days" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+<!-- GET /jira/issue/project/{projectId}/sprint/{sprintId} - Get Issues by Project and Sprint -->
+	<flow name="getIssuesByProjectAndSprintFlow" doc:name="Get Issues By Project And Sprint Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/sprint/{sprintId}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] in sprint: #[attributes.uriParams.sprintId]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.sprintId]" doc:name="Set Sprint ID" variableName="sprintId"/>
+		<flow-ref doc:name="Get Issues By Project And Sprint" name="getIssuesByProjectAndSprintSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] in sprint: #[vars.sprintId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/project/{projectId}/version/{versionId} - Get Issues by Project and Version -->
+	<flow name="getIssuesByProjectAndVersionFlow" doc:name="Get Issues By Project And Version Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/project/{projectId}/version/{versionId}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues for project: #[attributes.uriParams.projectId] with version: #[attributes.uriParams.versionId]..." />
+		<set-variable value="#[attributes.uriParams.projectId]" doc:name="Set Project ID" variableName="projectId"/>
+		<set-variable value="#[attributes.uriParams.versionId]" doc:name="Set Version ID" variableName="versionId"/>
+		<flow-ref doc:name="Get Issues By Project And Version" name="getIssuesByProjectAndVersionSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues for project: #[vars.projectId] with version: #[vars.versionId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	
+	<!-- ========================================== -->
+	<!-- GLOBAL JIRA ISSUE ENDPOINTS -->
+	<!-- ========================================== -->
+
+	<!-- GET /jira/issue/type/{issueType} - Get Issues by Type (All Projects) -->
+	<flow name="getIssuesByTypeGlobalFlow" doc:name="Get Issues By Type Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/type/{issueType}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues with type: #[attributes.uriParams.issueType]..." />
+		<set-variable value="#[attributes.uriParams.issueType]" doc:name="Set Issue Type" variableName="issueType"/>
+		<flow-ref doc:name="Get Issues By Type Global" name="getIssuesByTypeGlobalSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues of type: #[vars.issueType]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+	<!-- GET /jira/issue/priority/{priority} - Get Issues by Priority (All Projects) -->
+	<flow name="getIssuesByPriorityGlobalFlow" doc:name="Get Issues By Priority Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/priority/{priority}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues with priority: #[attributes.uriParams.priority]..." />
+		<set-variable value="#[attributes.uriParams.priority]" doc:name="Set Priority" variableName="priority"/>
+		<flow-ref doc:name="Get Issues By Priority Global" name="getIssuesByPriorityGlobalSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues with priority: #[vars.priority]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/assignee/{username} - Get Issues by Assignee (All Projects) -->
+	<flow name="getIssuesByAssigneeGlobalFlow" doc:name="Get Issues By Assignee Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/assignee/{username}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues assigned to: #[attributes.uriParams.username]..." />
+		<set-variable value="#[attributes.uriParams.username]" doc:name="Set Assignee" variableName="assignee"/>
+		<flow-ref doc:name="Get Issues Assigned To User Global" name="getIssuesAssignedToUserGlobalSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues assigned to: #[vars.assignee]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+	<!-- GET /jira/issue/reporter/{username} - Get Issues by Reporter (All Projects) -->
+	<flow name="getIssuesByReporterGlobalFlow" doc:name="Get Issues By Reporter Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/reporter/{username}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues reported by: #[attributes.uriParams.username]..." />
+		<set-variable value="#[attributes.uriParams.username]" doc:name="Set Reporter" variableName="reporter"/>
+		<flow-ref doc:name="Get Issues By Reporter Global" name="getIssuesByReporterGlobalSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues reported by: #[vars.reporter]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/recent/created/{days} - Get Recently Created Issues (All Projects) -->
+	<flow name="getRecentlyCreatedIssuesGlobalFlow" doc:name="Get Recently Created Issues Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/recent/created/{days}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues created in the last #[attributes.uriParams.days default 10] days..." />
+		<set-variable value="#[attributes.uriParams.days default 10]" doc:name="Set Days Ago" variableName="daysAgo"/>
+		<flow-ref doc:name="Get Recently Created Issues Global" name="getRecentlyCreatedIssuesGlobalSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues created in the last #[vars.daysAgo] days" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/recent/modified/{days} - Get Recently Modified Issues (All Projects) -->
+	<flow name="getRecentlyModifiedIssuesGlobalFlow" doc:name="Get Recently Modified Issues Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/recent/modified/{days}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues modified in the last #[attributes.uriParams.days default 10] days..." />
+		<set-variable value="#[attributes.uriParams.days default 10]" doc:name="Set Days Ago" variableName="daysAgo"/>
+		<flow-ref doc:name="Get Recently Modified Issues Global" name="getRecentlyModifiedIssuesGlobalSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues modified in the last #[vars.daysAgo] days" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+	<!-- GET /jira/issue/recent/resolved/{days} - Get Recently Created Issues (All Projects) -->
+	<flow name="getRecentlyResolvedIssuesGlobalFlow" doc:name="Get Recently Created Issues Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/recent/resolved/{days}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues created in the last #[attributes.uriParams.days default 10] days..." />
+		<set-variable value="#[attributes.uriParams.days default 10]" doc:name="Set Days Ago" variableName="daysAgo"/>
+		<flow-ref doc:name="Get Recently Resolved Issues Global" name="getRecentlyResolvedIssuesGlobalSubflow" doc:id="0f308b12-b7fd-4db7-8f65-a440044aa49a"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.total default 0] issues resolved in the last #[vars.daysAgo default 10] days" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	
+
+	<!-- GET /jira/issue/sprint/{sprintId} - Get Issues by Sprint (All Projects) -->
+	<flow name="getIssuesBySprintGlobalFlow" doc:name="Get Issues By Sprint Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/sprint/{sprintId}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues in sprint: #[attributes.uriParams.sprintId]..." />
+		<set-variable value="#[attributes.uriParams.sprintId]" doc:name="Set Sprint ID" variableName="sprintId"/>
+		<flow-ref doc:name="Get Issues By Sprint Global" name="getIssuesBySprintGlobalSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues in sprint: #[vars.sprintId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+	<!-- GET /jira/issue/version/{versionId} - Get Issues by Version (All Projects) -->
+	<flow name="getIssuesByVersionGlobalFlow" doc:name="Get Issues By Version Global Flow">
+		<http:listener config-ref="httpListenerConfig" path="/jira/issue/version/{versionId}" doc:name="HTTP Listener" />
+		<logger level="INFO" doc:name="Start Logger" message="Getting JIRA issues with version: #[attributes.uriParams.versionId]..." />
+		<set-variable value="#[attributes.uriParams.versionId]" doc:name="Set Version ID" variableName="versionId"/>
+		<flow-ref doc:name="Get Issues By Version Global" name="getIssuesByVersionGlobalSubflow"/>
+		<flow-ref doc:name="Transform Issues Response" name="transformIssuesResponseSubflow"/>
+		<logger level="INFO" doc:name="Success Logger" message="Retrieved #[payload.totalIssues] issues with version: #[vars.versionId]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" type="ANY">
+				<flow-ref doc:name="Handle Get Issues Error" name="handleGetIssuesErrorSubflow"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+
+</mule>

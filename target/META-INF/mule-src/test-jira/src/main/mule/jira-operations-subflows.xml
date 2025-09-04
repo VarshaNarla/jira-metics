@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:jira="http://www.mulesoft.org/schema/mule/jira"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+		http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+		http://www.mulesoft.org/schema/mule/jira http://www.mulesoft.org/schema/mule/jira/current/mule-jira.xsd">
+
+	<!-- Get All Projects using JIRA Connector -->
+	<sub-flow name="getProjectsSubflow" doc:name="Get Projects Subflow">
+		<http:request method="GET" doc:name="Get Projects Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.projects}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+			<http:query-params><![CDATA[#[{
+				"maxResults": "1000",
+				"startAt": "0"
+			}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Extract Projects">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.values default payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Projects Logger" message="Retrieved #[sizeOf(payload)] projects using HTTP request" />
+	</sub-flow>
+
+	<!-- Get Project by ID using JIRA Connector -->
+	<sub-flow name="getProjectByIdSubflow" doc:name="Get Project By ID Subflow">
+		<http:request method="GET" doc:name="Get Project By ID Request" config-ref="jiraAgileHttpRequestConfig" path="#['/rest/api/3/project/' ++ vars.projectId]">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Project Logger" message="Retrieved project with ID: #[vars.projectId] using HTTP request" />
+	</sub-flow>
+
+	<!-- Create Issue using JIRA Connector -->
+	<sub-flow name="createIssueSubflow" doc:name="Create Issue Subflow">
+		<http:request method="POST" doc:name="Create Issue Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.createIssue}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issue Created Logger" message="Created JIRA issue with ID: #[payload.id] using HTTP request" />
+	</sub-flow>
+
+	<!-- Validate Issue Input -->
+	<sub-flow name="validateIssueInputSubflow" doc:name="Validate Issue Input Subflow">
+		<ee:transform doc:name="Validate and Transform Issue Input">
+			<ee:message>
+				<ee:set-payload resource="dwl/issue-creation-transformer.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Validation Logger" message="Issue input validated successfully" />
+	</sub-flow>
+
+<!-- Get Issue By ID Subflow -->
+	<sub-flow name="getIssueByIdSubflow" doc:name="Get Issue By ID Subflow">
+		<http:request method="GET" doc:name="Get Issue By ID Request" config-ref="jiraAgileHttpRequestConfig" path="#['/rest/api/3/issue/' ++ vars.issueId]">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issue Logger" message="Retrieved issue with ID: #[vars.issueId] using HTTP request" />
+	</sub-flow>
+
+	<!-- Create Project Subflow -->
+	<sub-flow name="createProjectSubflow" doc:name="Create Project Subflow">
+		<ee:transform doc:name="Validate and Transform Project Input">
+			<ee:message>
+				<ee:set-payload resource="dwl/project-creation-transformer.dwl" />
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Create Project Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.createProject}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Project Created Logger" message="Created JIRA project with ID: #[payload.id] using HTTP request" />
+	</sub-flow>
+
+</mule>

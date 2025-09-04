@@ -1,0 +1,33 @@
+# Jira Configuration Properties
+jira:
+  baseUrl: "https://prowesssoft-team.atlassian.net"
+  username: "varsha.narla@prowesssoft.com"
+  timeout: "30000"
+  connector:
+    baseUri: "https://prowesssoft-team.atlassian.net"
+  agile:
+    baseUrl: "https://prowesssoft-team.atlassian.net"
+    timeout: "30000"
+  
+http:
+  listener:
+    host: "0.0.0.0"
+    port: "8081"
+    
+api:
+  endpoints:
+    projects: "/rest/api/3/project"
+    boards: "/rest/agile/1.0/board"
+    search: "/rest/api/3/search"
+    sprint: "/rest/agile/1.0/board/{boardId}/sprint"
+    boardIssues: "/rest/agile/1.0/board/{boardId}/issue"
+    createIssue: "/rest/api/3/issue"
+    issue: "/rest/api/3/issue"
+    createProject: "/rest/api/3/project"
+  
+# Issue creation defaults
+issue:
+  defaults:
+    projectKey: "DEMO"
+    issueType: "Task"
+    priority: "Medium"

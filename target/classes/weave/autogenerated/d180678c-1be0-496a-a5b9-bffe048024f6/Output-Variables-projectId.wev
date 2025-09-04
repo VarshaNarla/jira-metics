@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_d180678c_1be0_496a_a5b9_bffe048024f6_Output_Variables_projectId = String | Null
+

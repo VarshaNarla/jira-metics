@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+		http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+	<!-- Get Issues by Issue Type Subflow -->
+	<sub-flow name="getIssuesByTypeSubflow" doc:name="Get Issues By Type Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND issuetype = '" ++ vars.issueType ++ "'",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues of type: #[vars.issueType]" />
+	</sub-flow>
+
+	<!-- Get Recently Created Issues Subflow -->
+	<sub-flow name="getRecentlyCreatedIssuesSubflow" doc:name="Get Recently Created Issues Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::core::Dates
+output application/json
+
+var daysAgo = vars.daysAgo as Number default 10
+var dateStr = "-" ++ daysAgo ++ "d"
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND created >= " ++ dateStr ++ " ORDER BY created DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues created in the last #[vars.daysAgo default 10] days" />
+	</sub-flow>
+
+	<!-- Get Recently Modified Issues Subflow -->
+	<sub-flow name="getRecentlyModifiedIssuesSubflow" doc:name="Get Recently Modified Issues Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::core::Dates
+output application/json
+
+var daysAgo = vars.daysAgo as Number default 10
+var dateStr = "-" ++ daysAgo ++ "d"
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND updated >= " ++ dateStr ++ " ORDER BY updated DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues modified in the last #[vars.daysAgo default 10] days" />
+	</sub-flow>
+
+	<!-- Get Issues Assigned to User Subflow -->
+	<sub-flow name="getIssuesAssignedToUserSubflow" doc:name="Get Issues Assigned To User Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND assignee = '" ++ vars.assignee ++ "' ORDER BY updated DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues assigned to: #[vars.assignee]" />
+	</sub-flow>
+
+	<!-- Get Issues by Project and Status Subflow -->
+	<sub-flow name="getIssuesByProjectAndStatusSubflow" doc:name="Get Issues By Project And Status Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND status = '" ++ vars.status ++ "' ORDER BY updated DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues for project: #[vars.projectId] with status: #[vars.status]" />
+	</sub-flow>
+
+<!-- Get Issues by Project and Resolved Date Range Subflow -->
+	<sub-flow name="getRecentlyResolvedIssuesSubflow" doc:name="Get Issues By Project And Resolved Date Range Subflow" doc:id="d180678c-1be0-496a-a5b9-bffe048024f6">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::core::Dates
+output application/json
+
+var daysAgo = vars.daysAgo as Number default 10
+var dateStr = "-" ++ daysAgo ++ "d"
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND resolved >= " ++ dateStr ++ " ORDER BY resolved DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues resolved in the last #[vars.daysAgo default 10] days" />
+	</sub-flow>
+
+	<!-- Get Issues by Project and Priority Subflow -->
+	<sub-flow name="getIssuesByProjectAndPrioritySubflow" doc:name="Get Issues By Project And Priority Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND priority = '" ++ vars.priority ++ "' ORDER BY updated DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues for project: #[vars.projectId] with priority: #[vars.priority]" />
+	</sub-flow>
+
+	<!-- Get Issues by Project and Reporter Subflow -->
+	<sub-flow name="getIssuesByProjectAndReporterSubflow" doc:name="Get Issues By Project And Reporter Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND reporter = '" ++ vars.reporter ++ "' ORDER BY updated DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "reporter", "created", "updated", "project"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues for project: #[vars.projectId] reported by: #[vars.reporter]" />
+	</sub-flow>
+<!-- Get Issues by Project and Sprint Subflow -->
+	<sub-flow name="getIssuesByProjectAndSprintSubflow" doc:name="Get Issues By Project And Sprint Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND sprint = " ++ vars.sprintId ++ " ORDER BY updated DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project", "sprint"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues for project: #[vars.projectId] in sprint: #[vars.sprintId]" />
+	</sub-flow>
+
+	<!-- Get Issues by Project and Version Subflow -->
+	<sub-flow name="getIssuesByProjectAndVersionSubflow" doc:name="Get Issues By Project And Version Subflow">
+		<ee:transform doc:name="Prepare JQL Query">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "jql": "project = '" ++ vars.projectId ++ "' AND fixVersion = " ++ vars.versionId ++ " ORDER BY updated DESC",
+    "maxResults": 100,
+    "fields": ["summary", "status", "issuetype", "priority", "assignee", "created", "updated", "project", "fixVersions"]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Search Issues Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.search}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved #[payload.total default 0] issues for project: #[vars.projectId] with version: #[vars.versionId]" />
+	</sub-flow>
+</mule>

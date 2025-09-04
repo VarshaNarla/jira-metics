@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+	<!-- ========================================== -->
+	<!-- METRICS PROCESSING SUBFLOWS -->
+	<!-- ========================================== -->
+
+	<sub-flow name="processJiraMetricsSubflow" doc:name="Process Jira Metrics Subflow">
+		<!-- Get All Projects -->
+		<flow-ref doc:name="Get Projects" name="getProjectsSubflow"/>
+		<set-variable value="#[payload]" doc:name="Set Projects Variable" variableName="projects"/>
+		
+		<!-- Get All Boards -->
+		<flow-ref doc:name="Get Boards" name="getBoardsSubflow"/>
+		<set-variable value="#[payload]" doc:name="Set Boards Variable" variableName="boards"/>
+		
+		<!-- Get Sprints for Each Board -->
+		<flow-ref doc:name="Get All Sprints" name="getAllSprintsSubflow"/>
+		<set-variable value="#[vars.sprints]" doc:name="Set All Sprints Variable" variableName="allSprints"/>
+		
+		<!-- Get Issues for Each Board -->
+		<flow-ref doc:name="Get Board Issues" name="getBoardIssuesSubflow"/>
+		<set-variable value="#[vars.issues]" doc:name="Set Board Issues Variable" variableName="boardIssues"/>
+	</sub-flow>
+
+	<sub-flow name="processProjectMetricsSubflow" doc:name="Process Project Metrics Subflow">
+		<!-- Get Specific Project -->
+		<flow-ref doc:name="Get Project By ID" name="getProjectByIdSubflow"/>
+		<set-variable value="#[payload]" doc:name="Set Project Variable" variableName="project"/>
+		
+		<!-- Get Boards for Project -->
+		<flow-ref doc:name="Get Boards for Project" name="getBoardsForProjectSubflow"/>
+		<set-variable value="#[payload]" doc:name="Set Boards Variable" variableName="boards"/>
+		
+		<!-- Get Sprints for Project Boards -->
+		<flow-ref doc:name="Get Sprints for Project" name="getSprintsForProjectSubflow"/>
+		<set-variable value="#[vars.sprints]" doc:name="Set Sprints Variable" variableName="allSprints"/>
+		
+		<!-- Get Issues for Project Boards -->
+		<flow-ref doc:name="Get Issues for Project" name="getIssuesForProjectSubflow"/>
+		<set-variable value="#[vars.issues]" doc:name="Set Issues Variable" variableName="boardIssues"/>
+	</sub-flow>
+
+	<!-- ========================================== -->
+	<!-- VALIDATION SUBFLOWS -->
+	<!-- ========================================== -->
+
+	<sub-flow name="validateIssueProjectSubflow" doc:name="Validate Issue Project Subflow">
+		<choice doc:name="Check Project Match">
+			<when expression="#[payload.fields.project.id != vars.projectId and payload.fields.project.key != vars.projectId]">
+				<raise-error doc:name="Raise Project Mismatch Error" type="CUSTOM:PROJECT_MISMATCH" description="Issue does not belong to the specified project"/>
+			</when>
+			<otherwise>
+				<logger level="DEBUG" doc:name="Project Validation Passed" message="Issue belongs to project: #[vars.projectId]"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+
+	<!-- ========================================== -->
+	<!-- TRANSFORMATION SUBFLOWS -->
+	<!-- ========================================== -->
+
+	<sub-flow name="transformMetricsResponseSubflow" doc:name="Transform Metrics Response Subflow">
+		<ee:transform doc:name="Transform to Jira Metrics">
+			<ee:message>
+				<ee:set-payload resource="dwl/jira-metrics-transformer.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="transformProjectMetricsResponseSubflow" doc:name="Transform Project Metrics Response Subflow">
+		<ee:transform doc:name="Transform to Project Metrics">
+			<ee:message>
+				<ee:set-payload resource="dwl/project-metrics-transformer.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="transformCreateProjectResponseSubflow" doc:name="Transform Create Project Response Subflow">
+		<ee:transform doc:name="Transform Create Project Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"success": true,
+	"message": "JIRA project created successfully",
+	"projectId": payload.id,
+	"projectKey": payload.key,
+	"projectName": payload.name,
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="transformProjectResponseSubflow" doc:name="Transform Project Response Subflow">
+		<ee:transform doc:name="Transform Project Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"success": true,
+	"project": {
+		"projectId": payload.id,
+		"projectKey": payload.key,
+		"projectName": payload.name,
+		"projectType": payload.projectTypeKey,
+		"lead": payload.lead.displayName default "N/A",
+		"description": payload.description default ""
+	},
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="transformCreateIssueResponseSubflow" doc:name="Transform Create Issue Response Subflow">
+		<ee:transform doc:name="Transform Create Issue Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"success": true,
+	"message": "JIRA issue created successfully",
+	"issueId": payload.id,
+	"issueKey": payload.key,
+	"issueUrl": payload.self,
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="transformIssueResponseSubflow" doc:name="Transform Issue Response Subflow">
+		<ee:transform doc:name="Transform Issue Response">
+			<ee:message>
+				<ee:set-payload resource="dwl/issue-response-transformer.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="transformIssuesResponseSubflow" doc:name="Transform Issues Response Subflow">
+		<ee:transform doc:name="Transform Issues Response">
+			<ee:message>
+				<ee:set-payload resource="dwl/issues-response-transformer.dwl" />
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<!-- ========================================== -->
+	<!-- ERROR HANDLING SUBFLOWS -->
+	<!-- ========================================== -->
+
+	<sub-flow name="handleMetricsErrorSubflow" doc:name="Handle Metrics Error Subflow">
+		<ee:transform doc:name="Metrics Error Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": true,
+	"message": "Failed to retrieve Jira metrics",
+	"details": error.description default "Unknown error occurred",
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="handleProjectMetricsErrorSubflow" doc:name="Handle Project Metrics Error Subflow">
+		<ee:transform doc:name="Project Metrics Error Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": true,
+	"message": "Failed to retrieve Jira metrics for project ID: " ++ (vars.projectId default "unknown"),
+	"details": error.description default "Unknown error occurred",
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="handleCreateProjectErrorSubflow" doc:name="Handle Create Project Error Subflow">
+		<ee:transform doc:name="Create Project Error Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": true,
+	"message": "Failed to create JIRA project",
+	"details": error.description default "Unknown error occurred",
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="handleGetProjectErrorSubflow" doc:name="Handle Get Project Error Subflow">
+		<ee:transform doc:name="Get Project Error Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": true,
+	"message": "Failed to retrieve JIRA project with ID: " ++ (vars.projectId default "unknown"),
+	"details": error.description default "Unknown error occurred",
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="handleCreateIssueErrorSubflow" doc:name="Handle Create Issue Error Subflow">
+		<ee:transform doc:name="Create Issue Error Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": true,
+	"message": "Failed to create JIRA issue",
+	"details": error.description default "Unknown error occurred",
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="handleGetIssueErrorSubflow" doc:name="Handle Get Issue Error Subflow">
+		<ee:transform doc:name="Get Issue Error Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": true,
+	"message": "Failed to retrieve JIRA issue with ID: " ++ (vars.issueId default "unknown"),
+	"details": error.description default "Unknown error occurred",
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+	<sub-flow name="handleGetIssuesErrorSubflow" doc:name="Handle Get Issues Error Subflow">
+		<ee:transform doc:name="Get Issues Error Response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": true,
+	"message": "Failed to retrieve JIRA issues" ++ 
+		(if (vars.projectId != null) " for project: " ++ vars.projectId else "") ++
+		(if (vars.issueType != null) " with type: " ++ vars.issueType else "") ++
+		(if (vars.status != null) " with status: " ++ vars.status else "") ++
+		(if (vars.assignee != null) " assigned to: " ++ vars.assignee else ""),
+	"details": error.description default "Unknown error occurred",
+	"timestamp": now()
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+</mule>

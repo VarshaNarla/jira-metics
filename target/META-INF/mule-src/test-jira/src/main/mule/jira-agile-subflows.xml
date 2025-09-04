@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+		http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+	<!-- Get All Boards -->
+	<sub-flow name="getBoardsSubflow" doc:name="Get Boards Subflow">
+		<http:request method="GET" doc:name="Get Boards Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.boards}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+			<http:query-params><![CDATA[#[{
+				"maxResults": "1000"
+			}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Extract Boards">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.values]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Boards Logger" message="Retrieved #[sizeOf(payload)] boards" />
+	</sub-flow>
+
+	<!-- Get Boards for Specific Project -->
+	<sub-flow name="getBoardsForProjectSubflow" doc:name="Get Boards for Project Subflow">
+		<http:request method="GET" doc:name="Get Boards Request" config-ref="jiraAgileHttpRequestConfig" path="${api.endpoints.boards}">
+			<http:headers><![CDATA[#[{
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			}]]]></http:headers>
+			<http:query-params><![CDATA[#[{
+				"maxResults": "1000",
+				"projectKeyOrId": vars.projectId
+			}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Extract Boards for Project">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.values filter ($.location.projectKey == vars.project.key or $.location.projectId == vars.projectId)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Boards Logger" message="Retrieved #[sizeOf(payload)] boards for project ID: #[vars.projectId]" />
+	</sub-flow>
+
+	<!-- Get All Sprints -->
+	<sub-flow name="getAllSprintsSubflow" doc:name="Get All Sprints Subflow">
+		<ee:transform doc:name="Prepare Board IDs">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+(vars.boards filter ((item,value) -> item.'type' == 'scrum' )) map $.id]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sprints" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each Board" collection="#[payload]">
+			<http:request method="GET" doc:name="Get Sprints for Board" config-ref="jiraAgileHttpRequestConfig" path="#['/rest/agile/1.0/board/' ++ payload ++ '/sprint']">
+				<http:headers><![CDATA[#[{
+					"Accept": "application/json",
+					"Content-Type": "application/json"
+				}]]]></http:headers>
+				<http:query-params><![CDATA[#[{
+					"maxResults": "1000"
+				}]]]></http:query-params>
+			</http:request>
+			<ee:transform doc:name="Extract Sprint Values">
+				<ee:message>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="sprints" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.sprints ++ payload.values]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</foreach>
+		<logger level="INFO" doc:name="Sprints Logger" message="Retrieved sprints for all boards" />
+	</sub-flow>
+
+	<!-- Get Sprints for Project -->
+	<sub-flow name="getSprintsForProjectSubflow" doc:name="Get Sprints for Project Subflow">
+		<ee:transform doc:name="Prepare Board IDs">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+(vars.boards filter ((item,value) -> item.'type' == 'scrum' )) map $.id]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sprints" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each Board" collection="#[payload]">
+			<http:request method="GET" doc:name="Get Sprints for Board" config-ref="jiraAgileHttpRequestConfig" path="#['/rest/agile/1.0/board/' ++ payload ++ '/sprint']">
+				<http:headers><![CDATA[#[{
+					"Accept": "application/json",
+					"Content-Type": "application/json"
+				}]]]></http:headers>
+				<http:query-params><![CDATA[#[{
+					"maxResults": "1000"
+				}]]]></http:query-params>
+			</http:request>
+			<ee:transform doc:name="Extract Sprint Values">
+				<ee:message>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="sprints" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.sprints ++ payload.values]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</foreach>
+		<logger level="INFO" doc:name="Sprints Logger" message="Retrieved sprints for project boards" />
+	</sub-flow>
+
+	<!-- Get Board Issues -->
+	<sub-flow name="getBoardIssuesSubflow" doc:name="Get Board Issues Subflow">
+		<ee:transform doc:name="Prepare Board Data">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.boards map {
+	boardId: $.id,
+	boardName: $.name
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="issues" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each Board" collection="#[payload]">
+			<set-variable value="#[payload.boardId]" doc:name="Set Current Board ID" variableName="currentBoardId"/>
+			<http:request method="GET" doc:name="Get Issues for Board" config-ref="jiraAgileHttpRequestConfig" path="#['/rest/agile/1.0/board/' ++ vars.currentBoardId ++ '/issue']">
+				<http:headers><![CDATA[#[{
+					"Accept": "application/json",
+					"Content-Type": "application/json"
+				}]]]></http:headers>
+				<http:query-params><![CDATA[#[{
+					"maxResults": "1000",
+					"fields": "summary,status,issuetype,priority,assignee,created,updated,statuscategorychangedate,resolutiondate,resolution,histories"
+				}]]]></http:query-params>
+			</http:request>
+			<ee:transform doc:name="Add Board ID to Issues">
+				<ee:message>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="issues" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.issues ++
+[{
+	boardId: vars.currentBoardId,
+	issues: payload.issues
+}]]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</foreach>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved issues for all boards" />
+	</sub-flow>
+
+	<!-- Get Issues for Project -->
+	<sub-flow name="getIssuesForProjectSubflow" doc:name="Get Issues for Project Subflow">
+		<ee:transform doc:name="Prepare Board Data">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.boards map {
+	boardId: $.id,
+	boardName: $.name
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="issues" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each Board" collection="#[payload]">
+			<set-variable value="#[payload.boardId]" doc:name="Set Current Board ID" variableName="currentBoardId"/>
+			<http:request method="GET" doc:name="Get Issues for Board" config-ref="jiraAgileHttpRequestConfig" path="#['/rest/agile/1.0/board/' ++ vars.currentBoardId ++ '/issue']">
+				<http:headers><![CDATA[#[{
+					"Accept": "application/json",
+					"Content-Type": "application/json"
+				}]]]></http:headers>
+				<http:query-params><![CDATA[#[{
+					"maxResults": "1000",
+					"fields": "summary,status,issuetype,priority,assignee,created,updated,statuscategorychangedate,resolutiondate,resolution,histories"
+				}]]]></http:query-params>
+			</http:request>
+			<ee:transform doc:name="Add Board ID to Issues">
+				<ee:message>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="issues" ><![CDATA[%dw 2.0
+output application/json
+---
+vars.issues ++
+[{
+	boardId: vars.currentBoardId,
+	issues: payload.issues
+}]]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</foreach>
+		<logger level="INFO" doc:name="Issues Logger" message="Retrieved issues for project boards" />
+	</sub-flow>
+
+</mule>

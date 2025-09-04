@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jira="http://www.mulesoft.org/schema/mule/jira" xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/jira http://www.mulesoft.org/schema/mule/jira/current/mule-jira.xsd 
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+		http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+
+	<!-- Configuration Properties -->
+	<configuration-properties file="config/jira-config.yaml" doc:name="Configuration properties" />
+	
+	<!-- Secure Properties Configuration -->
+	<secure-properties:config name="securePropertiesConfig" file="config/secure-properties.yaml" key="mySecretKey12345" doc:name="Secure Properties Config">
+		<secure-properties:encrypt algorithm="AES" mode="CBC" useRandomIVs="true"/>
+	</secure-properties:config>
+
+	<!-- HTTP Listener Configuration -->
+	<http:listener-config name="httpListenerConfig" doc:name="HTTP Listener config">
+		<http:listener-connection host="${http.listener.host}" port="${http.listener.port}" />
+	</http:listener-config>
+
+	<!-- JIRA Connector Configuration -->
+	<jira:config name="jiraConnectorConfig" doc:name="JIRA Connector Config">
+		<jira:basic-auth-connection username="${jira.username}" password="ATATT3xFfGF0lWIKURh7SapUWtMqkZwZzJa6ulmiLJf89TJk3iGdc5IjGB5YB7JBNukFmyUiNa6KopYuy4eN7CN2E_hTBpVcP4q-7mW0k_ZpBWC3aJT23QD3_j9t3Fi1Z1h6wmjcGNYRxlmhlqhnq6_eBstteWPfZOWTud-KoXBlnZ0qTtVlGjo=02F9B29F" baseUri="${jira.connector.baseUri}" />
+	</jira:config>
+
+	<!-- HTTP Request Configuration for Jira Agile API (for boards, sprints) -->
+	<http:request-config name="jiraAgileHttpRequestConfig" doc:name="Jira Agile HTTP Request Configuration">
+		<http:request-connection host="prowesssoft-team.atlassian.net" port="443" protocol="HTTPS">
+			<http:authentication>
+				<http:basic-authentication username="${jira.username}" password="ATATT3xFfGF0lWIKURh7SapUWtMqkZwZzJa6ulmiLJf89TJk3iGdc5IjGB5YB7JBNukFmyUiNa6KopYuy4eN7CN2E_hTBpVcP4q-7mW0k_ZpBWC3aJT23QD3_j9t3Fi1Z1h6wmjcGNYRxlmhlqhnq6_eBstteWPfZOWTud-KoXBlnZ0qTtVlGjo=02F9B29F"/>
+			</http:authentication>
+		</http:request-connection>
+	</http:request-config>
+</mule>
